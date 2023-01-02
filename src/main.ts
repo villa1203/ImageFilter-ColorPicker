@@ -2,25 +2,29 @@ import './style.css'
 
 
 async function main() {
-    const threshold = 20
+    const threshold = 10
 
-    const imageForEffect        = document.querySelector('.image-effect--image')
-    const backgroundForEffect   = document.querySelector('.image-effect--background')
-    const canvasContainer       = document.querySelector('.image-effect--canvas-container')
+    const imageForEffect            = document.querySelector('.image-effect--image')
+    const backgroundForEffect       = document.querySelector('.image-effect--background')
+    const canvasRendererContainer   = document.querySelector('.image-effect--canvas-container')
 
-    if (!(imageForEffect        instanceof HTMLImageElement))   return
-    if (!(backgroundForEffect   instanceof HTMLImageElement))   return
-    if (!(canvasContainer       instanceof HTMLDivElement))     return
+    if (!(imageForEffect                instanceof HTMLImageElement))   return
+    if (!(backgroundForEffect           instanceof HTMLImageElement))   return
+    if (!(canvasRendererContainer       instanceof HTMLDivElement))     return
 
-    const canvasForEffectPixelValue             = await createCanvasByImage(imageForEffect)
-    const canvasForEffectPixelValue_ctx         = canvasForEffectPixelValue.getContext('2d')!
-    const canvasForEffectPixelValue_imageData   = canvasForEffectPixelValue_ctx.getImageData(0, 0, canvasForEffectPixelValue.width, canvasForEffectPixelValue.height)
+    const canvasForImage            = await createCanvasByImage(imageForEffect)
+    const canvasForImage_ctx        = canvasForImage.getContext('2d')!
+    const canvasForImage_imageData  = canvasForImage_ctx.getImageData(0, 0, canvasForImage.width, canvasForImage.height)
+
+    const canvasForBackground           = await createCanvasByImage(backgroundForEffect)
+    const canvasForBackground_ctx       = canvasForBackground.getContext('2d')!
+    const canvasForBackground_imageData = canvasForBackground_ctx.getImageData(0, 0, canvasForImage.width, canvasForImage.height)
 
     const canvasForEffectRender             = await createCanvasByImage(imageForEffect)
     const canvasForEffectRender_ctx         = canvasForEffectRender.getContext('2d')!
-    const canvasForEffectRender_imageData   = canvasForEffectRender_ctx.getImageData(0, 0, canvasForEffectPixelValue.width, canvasForEffectPixelValue.height)
+    const canvasForEffectRender_imageData   = canvasForEffectRender_ctx.getImageData(0, 0, canvasForImage.width, canvasForImage.height)
 
-    canvasContainer.appendChild(canvasForEffectRender)
+    canvasRendererContainer.appendChild(canvasForEffectRender)
     canvasForEffectRender.addEventListener('mousemove', (e: MouseEvent) => {
         const pixelNumberOfMouseOver = getPixelNumberByPosition({
             poseX: e.x,
@@ -32,18 +36,18 @@ async function main() {
         const colorReference =
             getPixelValueByNumber({
                 pixelNumber : pixelNumberOfMouseOver,
-                imageReference : canvasForEffectPixelValue,
-                imageData: canvasForEffectPixelValue_imageData.data,
+                imageReference : canvasForImage,
+                imageData: canvasForImage_imageData.data,
             })
 
         console.log(colorReference)
 
-        for (let i=0;i<canvasForEffectPixelValue_imageData.data.length;i+=4) {
+        for (let i=0;i<canvasForImage_imageData.data.length;i+=4) {
             const pixelInImage = {
-                r: canvasForEffectPixelValue_imageData.data[i],
-                g: canvasForEffectPixelValue_imageData.data[i+1],
-                b: canvasForEffectPixelValue_imageData.data[i+2],
-                a: canvasForEffectPixelValue_imageData.data[i+3],
+                r: canvasForImage_imageData.data[i],
+                g: canvasForImage_imageData.data[i+1],
+                b: canvasForImage_imageData.data[i+2],
+                a: canvasForImage_imageData.data[i+3],
             }
 
             const samePixel =
@@ -58,12 +62,12 @@ async function main() {
                 })
 
 
-            if(samePixel) {
-                canvasForEffectRender_imageData.data[i]   = 0
-                canvasForEffectRender_imageData.data[i+1] = 0
-                canvasForEffectRender_imageData.data[i+2] = 0
-                canvasForEffectRender_imageData.data[i+3] = 255
-            }
+            if (!samePixel) continue
+
+            canvasForEffectRender_imageData.data[i]     = 0
+            canvasForEffectRender_imageData.data[i + 1] = 0
+            canvasForEffectRender_imageData.data[i + 2] = 0
+            canvasForEffectRender_imageData.data[i + 3] = 0
         }
 
         canvasForEffectRender_ctx.putImageData(
@@ -71,7 +75,6 @@ async function main() {
             0,
             0,
         )
-        canvasContainer.style.backgroundColor = `rgba(${colorReference.r}, ${colorReference.g}, ${colorReference.b}, ${colorReference.a})`
     })
 }
 main()
