@@ -2,7 +2,10 @@ import './style.css'
 
 
 async function main() {
-    const threshold = 10
+    const threshold = 25
+    let accumulation = false
+
+    window.addEventListener('click', () => {accumulation = !accumulation})
 
     const imageForEffect            = document.querySelector('.image-effect--image')
     const backgroundForEffect       = document.querySelector('.image-effect--background')
@@ -18,7 +21,7 @@ async function main() {
 
     const canvasForBackground           = await createCanvasByImage(backgroundForEffect)
     const canvasForBackground_ctx       = canvasForBackground.getContext('2d')!
-    const canvasForBackground_imageData = canvasForBackground_ctx.getImageData(0, 0, canvasForImage.width, canvasForImage.height)
+    const canvasForBackground_imageData = canvasForBackground_ctx.getImageData(0, 0, canvasForBackground.width, canvasForBackground.height)
 
     const canvasForEffectRender             = await createCanvasByImage(imageForEffect)
     const canvasForEffectRender_ctx         = canvasForEffectRender.getContext('2d')!
@@ -40,8 +43,6 @@ async function main() {
                 imageData: canvasForImage_imageData.data,
             })
 
-        console.log(colorReference)
-
         for (let i=0;i<canvasForImage_imageData.data.length;i+=4) {
             const pixelInImage = {
                 r: canvasForImage_imageData.data[i],
@@ -62,12 +63,18 @@ async function main() {
                 })
 
 
-            if (!samePixel) continue
-
-            canvasForEffectRender_imageData.data[i]     = 0
-            canvasForEffectRender_imageData.data[i + 1] = 0
-            canvasForEffectRender_imageData.data[i + 2] = 0
-            canvasForEffectRender_imageData.data[i + 3] = 0
+            if (!samePixel) {
+                if(accumulation) continue
+                canvasForEffectRender_imageData.data[i]     = canvasForImage_imageData.data[i]
+                canvasForEffectRender_imageData.data[i + 1] = canvasForImage_imageData.data[i + 1]
+                canvasForEffectRender_imageData.data[i + 2] = canvasForImage_imageData.data[i + 2]
+                canvasForEffectRender_imageData.data[i + 3] = canvasForImage_imageData.data[i + 3]
+            } else {
+                canvasForEffectRender_imageData.data[i]     = canvasForBackground_imageData.data[i]
+                canvasForEffectRender_imageData.data[i + 1] = canvasForBackground_imageData.data[i + 1]
+                canvasForEffectRender_imageData.data[i + 2] = canvasForBackground_imageData.data[i + 2]
+                canvasForEffectRender_imageData.data[i + 3] = canvasForBackground_imageData.data[i + 3]
+            }
         }
 
         canvasForEffectRender_ctx.putImageData(
@@ -143,12 +150,12 @@ interface IPixelValue {
     a: number,
 }
 
+// =====
 interface IPixelValueByNumberParams {
     pixelNumber: IPixelNumber
     imageReference: HTMLCanvasElement
     imageData: Uint8ClampedArray
 }
-
 function getPixelValueByNumber({pixelNumber, imageReference, imageData}: IPixelValueByNumberParams): IPixelValue {
     const pixel = pixelNumber.y * imageReference.width + pixelNumber.x
     const position = pixel * 4
