@@ -1,11 +1,14 @@
 import './style.css'
 
 
-async function main() {
-    const threshold = 25
-    let accumulation = false
-
-    window.addEventListener('click', () => {accumulation = !accumulation})
+async function main({threshold}: {
+    threshold: number
+}) {
+    let _threshold = 25
+    let _pixelNumberOfMouseOver: IPixelNumber = {
+        x: -1,
+        y: -1,
+    }
 
     const imageForEffect            = document.querySelector('.image-effect--image')
     const backgroundForEffect       = document.querySelector('.image-effect--background')
@@ -15,6 +18,7 @@ async function main() {
     if (!(backgroundForEffect           instanceof HTMLImageElement))   return
     if (!(canvasRendererContainer       instanceof HTMLDivElement))     return
 
+    // init variables
     const canvasForImage            = await createCanvasByImage(imageForEffect)
     const canvasForImage_ctx        = canvasForImage.getContext('2d')!
     const canvasForImage_imageData  = canvasForImage_ctx.getImageData(0, 0, canvasForImage.width, canvasForImage.height)
@@ -27,70 +31,70 @@ async function main() {
     const canvasForEffectRender_ctx         = canvasForEffectRender.getContext('2d')!
     const canvasForEffectRender_imageData   = canvasForEffectRender_ctx.getImageData(0, 0, canvasForImage.width, canvasForImage.height)
 
+
+    // init canvas
     canvasRendererContainer.appendChild(canvasForEffectRender)
+
+
+    // set listener for effect update
+
     canvasForEffectRender.addEventListener('mousemove', (e: MouseEvent) => {
-        const pixelNumberOfMouseOver = getPixelNumberByPosition({
+        _pixelNumberOfMouseOver  = getPixelNumberByPosition({
             poseX: e.x,
             poseY: e.y,
             imageReference: imageForEffect,
             canvasRenderer: canvasForEffectRender,
         })
 
-        const colorReference =
-            getPixelValueByNumber({
-                pixelNumber : pixelNumberOfMouseOver,
-                imageReference : canvasForImage,
-                imageData: canvasForImage_imageData.data,
+        updateEffect({
+            canvasForBackground_imageData,
+            canvasForEffectRender_imageData,
+            canvasForEffectRender_ctx,
+            canvasForImage,
+            canvasForImage_imageData,
+            pixelNumberOfMouseOver: _pixelNumberOfMouseOver,
+            threshold: _threshold,
+        })
+    })
+
+    window.addEventListener('click', () => {
+        let direction = 1
+
+        function incrementThresholdRenderTransition(){
+            _threshold += 5 * direction
+
+            updateEffect({
+                canvasForBackground_imageData,
+                canvasForEffectRender_imageData,
+                canvasForEffectRender_ctx,
+                canvasForImage,
+                canvasForImage_imageData,
+                pixelNumberOfMouseOver: _pixelNumberOfMouseOver,
+                threshold: _threshold,
             })
 
-        for (let i=0;i<canvasForImage_imageData.data.length;i+=4) {
-            const pixelInImage = {
-                r: canvasForImage_imageData.data[i],
-                g: canvasForImage_imageData.data[i+1],
-                b: canvasForImage_imageData.data[i+2],
-                a: canvasForImage_imageData.data[i+3],
-            }
+            window.requestAnimationFrame(() => {
+                if(_threshold === threshold) {
+                    direction = 1
+                    return
+                }
 
-            const samePixel =
-                valueIsBetweenTwo({
-                    value: pixelInImage.r, min: colorReference.r - threshold, max: colorReference.r + threshold
-                })
-            && valueIsBetweenTwo({
-                    value: pixelInImage.g, min: colorReference.g - threshold, max: colorReference.g + threshold
-                })
-            && valueIsBetweenTwo({
-                    value: pixelInImage.b, min: colorReference.b - threshold, max: colorReference.b + threshold
-                })
+                if(_threshold > 255 && direction === 1)  direction = -1
 
-
-            if (!samePixel) {
-                if(accumulation) continue
-                canvasForEffectRender_imageData.data[i]     = canvasForImage_imageData.data[i]
-                canvasForEffectRender_imageData.data[i + 1] = canvasForImage_imageData.data[i + 1]
-                canvasForEffectRender_imageData.data[i + 2] = canvasForImage_imageData.data[i + 2]
-                canvasForEffectRender_imageData.data[i + 3] = canvasForImage_imageData.data[i + 3]
-            } else {
-                canvasForEffectRender_imageData.data[i]     = canvasForBackground_imageData.data[i]
-                canvasForEffectRender_imageData.data[i + 1] = canvasForBackground_imageData.data[i + 1]
-                canvasForEffectRender_imageData.data[i + 2] = canvasForBackground_imageData.data[i + 2]
-                canvasForEffectRender_imageData.data[i + 3] = canvasForBackground_imageData.data[i + 3]
-            }
+                incrementThresholdRenderTransition()
+            })
         }
-
-        canvasForEffectRender_ctx.putImageData(
-            canvasForEffectRender_imageData,
-            0,
-            0,
-        )
+        incrementThresholdRenderTransition()
     })
 }
-main()
+main({
+    threshold: 25,
+})
 
 // =====
 function valueIsBetweenTwo({value, min, max}: { value: number, min: number, max: number }) {
     return value < max && value > min
 }
-
 
 // ======
 async function createCanvasByImage(image: HTMLImageElement, width?:number, height?: number): Promise<HTMLCanvasElement> {
@@ -167,4 +171,63 @@ function getPixelValueByNumber({pixelNumber, imageReference, imageData}: IPixelV
         b: imageData[position + 2],
         a: imageData[position + 3],
     }
+}
+
+// =====
+interface IupdateEffectParams {
+    canvasForEffectRender_ctx: CanvasRenderingContext2D;
+    canvasForBackground_imageData: ImageData;
+    canvasForEffectRender_imageData: ImageData;
+    pixelNumberOfMouseOver: IPixelNumber;
+    canvasForImage: HTMLCanvasElement;
+    canvasForImage_imageData: ImageData;
+    threshold: number;
+}
+function updateEffect({canvasForEffectRender_ctx, canvasForBackground_imageData, canvasForEffectRender_imageData, pixelNumberOfMouseOver, canvasForImage, canvasForImage_imageData, threshold}: IupdateEffectParams) {
+
+    const colorReference =
+        getPixelValueByNumber({
+            pixelNumber : pixelNumberOfMouseOver,
+            imageReference : canvasForImage,
+            imageData: canvasForImage_imageData.data,
+        })
+
+    for (let i=0;i<canvasForImage_imageData.data.length;i+=4) {
+        const pixelInImage = {
+            r: canvasForImage_imageData.data[i],
+            g: canvasForImage_imageData.data[i+1],
+            b: canvasForImage_imageData.data[i+2],
+            a: canvasForImage_imageData.data[i+3],
+        }
+
+        const samePixel =
+            valueIsBetweenTwo({
+                value: pixelInImage.r, min: colorReference.r - threshold, max: colorReference.r + threshold
+            })
+            && valueIsBetweenTwo({
+                value: pixelInImage.g, min: colorReference.g - threshold, max: colorReference.g + threshold
+            })
+            && valueIsBetweenTwo({
+                value: pixelInImage.b, min: colorReference.b - threshold, max: colorReference.b + threshold
+            })
+
+
+        if (!samePixel) {
+            canvasForEffectRender_imageData.data[i]     = canvasForImage_imageData.data[i]
+            canvasForEffectRender_imageData.data[i + 1] = canvasForImage_imageData.data[i + 1]
+            canvasForEffectRender_imageData.data[i + 2] = canvasForImage_imageData.data[i + 2]
+            canvasForEffectRender_imageData.data[i + 3] = canvasForImage_imageData.data[i + 3]
+        } else {
+            canvasForEffectRender_imageData.data[i]     = canvasForBackground_imageData.data[i]
+            canvasForEffectRender_imageData.data[i + 1] = canvasForBackground_imageData.data[i + 1]
+            canvasForEffectRender_imageData.data[i + 2] = canvasForBackground_imageData.data[i + 2]
+            canvasForEffectRender_imageData.data[i + 3] = canvasForBackground_imageData.data[i + 3]
+        }
+    }
+
+    canvasForEffectRender_ctx.putImageData(
+        canvasForEffectRender_imageData,
+        0,
+        0,
+    )
 }
