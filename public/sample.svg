@@ -1,0 +1,6 @@
+<svg id="Group_1" data-name="Group 1" xmlns="http://www.w3.org/2000/svg" width="2" height="2" viewBox="0 0 2 2">
+  <rect id="Rectangle_1" data-name="Rectangle 1" width="1" height="1"/>
+  <rect id="Rectangle_2" data-name="Rectangle 2" width="1" height="1" transform="translate(1)" fill="red"/>
+  <rect id="Rectangle_3" data-name="Rectangle 3" width="1" height="1" transform="translate(1 1)" fill="none"/>
+  <rect id="Rectangle_4" data-name="Rectangle 4" width="1" height="1" transform="translate(0 1)" fill="lime"/>
+</svg>
