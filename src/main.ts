@@ -70,10 +70,10 @@ async function main() {
                 canvasForEffectRender_imageData.data[i + 2] = canvasForImage_imageData.data[i + 2]
                 canvasForEffectRender_imageData.data[i + 3] = canvasForImage_imageData.data[i + 3]
             } else {
-                canvasForEffectRender_imageData.data[i]     = canvasForBackground_imageData.data[i]
-                canvasForEffectRender_imageData.data[i + 1] = canvasForBackground_imageData.data[i + 1]
-                canvasForEffectRender_imageData.data[i + 2] = canvasForBackground_imageData.data[i + 2]
-                canvasForEffectRender_imageData.data[i + 3] = canvasForBackground_imageData.data[i + 3]
+                canvasForEffectRender_imageData.data[i]     = (canvasForImage_imageData.data[i] + canvasForBackground_imageData.data[i]) / 2
+                canvasForEffectRender_imageData.data[i + 1] = (canvasForImage_imageData.data[i + 1] + canvasForBackground_imageData.data[i + 1]) / 2
+                canvasForEffectRender_imageData.data[i + 2] = (canvasForImage_imageData.data[i + 2] + canvasForBackground_imageData.data[i + 2]) / 2
+                canvasForEffectRender_imageData.data[i + 3] = (canvasForImage_imageData.data[i + 3] + canvasForBackground_imageData.data[i + 3]) / 2
             }
         }
 
