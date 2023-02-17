@@ -1,0 +1,11 @@
+#pts-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+.image-effect--canvas-container > canvas {
+  display: block;
+  height: 100vh;
+  width: auto;
+  margin: auto;
+}
